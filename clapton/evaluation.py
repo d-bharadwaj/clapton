@@ -57,8 +57,8 @@ def get_expectations(
         def _num_true(pauli):
             circ = base_circ.copy()
             base_pcirc._add_measurements(circ, pauli)
-            sampler = circ.compile_sampler()
-            results = sampler.sample(shots)
+            sampler = circ.compile_sampler() 
+            results = sampler.sample(shots) #this is the sampler, when we have noise
             return np.sum(results)
         num_trues = np.fromiter((_num_true(pauli) for pauli in paulis), float, len(paulis))
         expectations = 1 - num_trues/shots * 2
