@@ -8,6 +8,9 @@ C1ids = [
     "SH", "SHX", "SHY", "SHZ",
     "HSH", "HSHX", "HSHY", "HSHZ"
 ]
+
+Pauli_Twirls = ["I", "X", "Y", "Z",]
+
 # Clifford rotations
 RXids = ["I", "SQRT_X", "X", "SQRT_X_DAG"]
 RYids = ["I", "SQRT_Y", "Y", "SQRT_Y_DAG"]

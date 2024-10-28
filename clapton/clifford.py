@@ -1,6 +1,6 @@
 import stim
 from copy import deepcopy
-from clapton.gate_ids import C1ids, RXids, RYids, RZids, Q2ids
+from clapton.gate_ids import C1ids, RXids, RYids, RZids, Q2ids, Pauli_Twirls
 from clapton.depolarization import DepolarizationModel
 
 
@@ -130,6 +130,16 @@ class ParametrizedAny1QClifford(Parametrized1QClifford):
         return C1ids[self.k]
     
 
+
+class ParametrizedPauliClifford(Parametrized1QClifford):
+    """
+    Pauli Twirl Clifford gate. dim = 24.
+    """
+    def __init__(self, qb: int):
+        super().__init__("C1", qb, 24)
+    def get_stim_id(self):
+        return Pauli_Twirls[self.k]
+
 class ParametrizedCliffordCircuit:
     """
     Circuit of ParametrizedClifford objects. Can be viewed as an object holding
@@ -157,6 +167,11 @@ class ParametrizedCliffordCircuit:
             if qb > self.num_physical_qubits - 1:
                 self.num_physical_qubits = qb + 1
         return gate
+    
+    def PauliTwirl(self, qb: int):
+        """Add pauli twirl from gate set."""
+        return self._append_gate(ParametrizedAny1QClifford, qb)
+    
     def RX(self, qb: int):
         """Add RX gate."""
         return self._append_gate(ParametrizedRXClifford, qb)
