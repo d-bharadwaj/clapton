@@ -70,6 +70,7 @@ pauli_twirl_list = [twirled_circular_ansatz(N=len(paulis[0]), reps=1, fix_2q=Tru
 
 vqe_pcirc = circular_ansatz(N=len(paulis[0]), reps=2, fix_2q=True)
 vqe_pcirc.add_depolarization_model(nm)
+# vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list)
 
 # we can perform nCAFQA by using the main optimization function "claptonize"
 # now with the noisy circuit
@@ -82,8 +83,7 @@ ks_best, energy_noisy, energy_noiseless = claptonize(
     n_starts=4,         # number of random genetic algorithm starts in parallel
     n_rounds=1,         # number of budget rounds, if None it will terminate itself
     callback=print,     # callback for internal parameter (#iteration, energies, ks) processing
-    budget=20,
-    pauli_twirl_list=pauli_twirl_list          # budget per genetic algorithm instance
+    budget=20,          # budget per genetic algorithm instance
 )
 
 # differrence

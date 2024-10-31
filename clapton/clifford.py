@@ -130,7 +130,6 @@ class ParametrizedAny1QClifford(Parametrized1QClifford):
         return C1ids[self.k]
     
 
-
 class ParametrizedPauliClifford(Parametrized1QClifford):
     """
     Pauli Twirl Clifford gate. dim = 24.
@@ -159,6 +158,7 @@ class ParametrizedCliffordCircuit:
         self.readout_errors = None
         self.circ_snapshot = None
         self.circ_snapshot_noiseless = None
+        self.pauli_twirl_list = None
     def _append_gate(self, GateType, *qbs):
         """Hidden function that appends gate to list and updates #qubits."""
         gate = GateType(*qbs)
@@ -459,6 +459,15 @@ class ParametrizedCliffordCircuit:
         return self
     def has_errors(self):
         return self.has_depolarization() or self.has_readout_errors()
+    def add_pauli_twirl_list(self, pauli_twirl_list):
+        """
+        Adds the pauli twirled list of circuits 
+        
+        Args:
+            pauli_twirl_list = [pauli_twirled_circuit1,pauli_twirled_circuit2..]
+        """
+        self.pauli_twirl_list = pauli_twirl_list
+        return self
     def number_parametrized_gates(self):
         return sum([1 for gate in self.gates if not gate.is_fixed()])
     def parameter_dimensions(self):

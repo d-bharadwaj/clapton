@@ -16,7 +16,6 @@ def loss_func(
         trans_pcirc: ParametrizedCliffordCircuit | None = None, 
         alpha: float | None = None, 
         return_sublosses: bool = False,
-        pauli_twirl_list : list[ParametrizedCliffordCircuit] | None = None,
         **energy_kwargs
     ):
     if trans_pcirc is None:
@@ -28,7 +27,6 @@ def loss_func(
                     paulis, 
                     coeffs, 
                     **energy_kwargs,
-                    pauli_twirl_list = pauli_twirl_list,
                     )
         energy_noiseless = get_energy(
                             vqe_pcirc, 
@@ -94,7 +92,7 @@ def eval_xs_terms(
             coeffs[idx1:idx2+1], 
             vqe_pcirc,
             trans_pcirc,
-            **loss_kwargs
+            **loss_kwargs,
             ))
         idx1 = 0
     idx2 = p_end_idx
@@ -209,7 +207,6 @@ def claptonize(
         n_retry_rounds: int = 0,
         return_n_rounds: bool = False,
         mix_best_pop_frac: float = 0.2,
-        pauli_twirl_list : list[ParametrizedCliffordCircuit] | None = None,
         **optimizer_and_loss_kwargs
     ):
     sig_handler = SignalHandler()
@@ -294,7 +291,6 @@ def claptonize(
                                                 trans_pcirc,
                                                 alpha=optimizer_and_loss_kwargs.get("alpha"),
                                                 return_sublosses=True,
-                                                pauli_twirl_list=pauli_twirl_list,
                                                 )
 
         if n_rounds is None:

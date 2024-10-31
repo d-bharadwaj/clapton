@@ -47,36 +47,16 @@ def get_expectations(
         paulis: list[str], 
         get_noiseless: bool = False, 
         shots: int = int(1e4),
-        pauli_twirl_list : list[ParametrizedCliffordCircuit] | None = None,
     ):
-    if get_noiseless:
+    if get_noiseless:   
         return get_expectations_tableau(base_pcirc, paulis)
     if base_pcirc.has_errors():
-        if pauli_twirl_list is not None:
-            # def _num_true(pauli):
-            #     results = []
-            #     for _ in range(shots):
-            #         # Randomly select a circuit from the pauli_twirl_list for each shot
-            #         twirled_circ = random.choice(pauli_twirl_list)
-            #         if twirled_circ.circ_snapshot is None:
-            #             twirled_circ.snapshot()
-            #         twirled_circ = twirled_circ.circ_snapshot.copy()
-            #         # Add measurements for the current Pauli to the selected twirled circuit
-            #         base_pcirc._add_measurements(twirled_circ, pauli)
-            #         # Compile and sample the circuit
-            #         sampler = twirled_circ.compile_sampler()
-            #         result = sampler.sample(shots=1)  # Only one shot per circuit at a time
-            #         results.append(result[0])   # Collect result from this single shot
-            #     # Count the number of `True` (or `1`) outcomes
-            #     return np.sum(results)
-            # # Compute expectations for each Pauli measurement string
-            # num_trues = np.fromiter((_num_true(pauli) for pauli in paulis), float, len(paulis))
-            # expectations = 1 - num_trues / shots * 2
-
+        if base_pcirc.pauli_twirl_list is not None:
+            pauli_twirl_list = base_pcirc.pauli_twirl_list
             def _num_true(pauli):
                 res = []
                 for _ in range(0,100):  
-                    # Randomly select a circuit from the pauli_twirl_list for each shot
+                    # Randomly select a circuit from the list 
                     twirled_pcirc = random.choice(pauli_twirl_list)
                     if twirled_pcirc.circ_snapshot is None:
                         twirled_pcirc.snapshot()
@@ -87,7 +67,7 @@ def get_expectations(
                     results = sampler.sample(shots)
                     summed = np.sum(results)
                     res.append(summed)
-                return np.average(res)
+                return round(np.average(res))
             num_trues = np.fromiter((_num_true(pauli) for pauli in paulis), float, len(paulis))
             expectations = 1 - num_trues/shots * 2
 
@@ -99,13 +79,13 @@ def get_expectations(
             #     circ = base_circ.copy()
             #     base_pcirc._add_measurements(circ, pauli)
             #     sampler = circ.compile_sampler()
-            #     results = sampler.sample(shots) #TODO: #this is the sampler, when we have noise
+            #     results = sampler.sample(shots) 
             #     return np.sum(results)
             # num_trues = np.fromiter((_num_true(pauli) for pauli in paulis), float, len(paulis))
             # expectations = 1 - num_trues/shots * 2
 
 
-        else : 
+        else :
             # use hidden routines for speedup (build main part of stim circ only once)
             if base_pcirc.circ_snapshot is None:
                 base_pcirc.snapshot()
@@ -114,7 +94,7 @@ def get_expectations(
                 circ = base_circ.copy()
                 base_pcirc._add_measurements(circ, pauli)
                 sampler = circ.compile_sampler()
-                results = sampler.sample(shots) #TODO: #this is the sampler, when we have noise
+                results = sampler.sample(shots)
                 return np.sum(results)
             num_trues = np.fromiter((_num_true(pauli) for pauli in paulis), float, len(paulis))
             expectations = 1 - num_trues/shots * 2
@@ -128,10 +108,9 @@ def get_energy(
         paulis: list[str], 
         coeffs: list[float], 
         get_noiseless: bool = False, 
-        pauli_twirl_list : list[ParametrizedCliffordCircuit] | None = None,
         **expectations_kwargs
     ):
-    expectations = get_expectations(pcirc, paulis, get_noiseless, pauli_twirl_list=pauli_twirl_list, **expectations_kwargs)
+    expectations = get_expectations(pcirc, paulis, get_noiseless, **expectations_kwargs)
     energy = np.inner(expectations, coeffs)
     return energy
 
