@@ -19,9 +19,16 @@ def loss_func(
         **energy_kwargs
     ):
     if trans_pcirc is None:
-        vqe_pcirc.assign(x)
-        vqe_pcirc.snapshot()
-        vqe_pcirc.snapshot_noiseless()
+
+        if vqe_pcirc.pauli_twirl_list is not None:
+            for circuit in vqe_pcirc.pauli_twirl_list:
+                circuit.assign(x)
+        else:
+            vqe_pcirc.assign(x) #TODO:
+
+        # vqe_pcirc.assign(x)s
+        # vqe_pcirc.snapshot()
+        # vqe_pcirc.snapshot_noiseless()
         energy = get_energy(
                     vqe_pcirc, 
                     paulis, 
@@ -38,7 +45,7 @@ def loss_func(
         pauli_weight_loss = 0.
         loss = energy + energy_noiseless
     else:
-        trans_circ = trans_pcirc.assign(x).stim_circuit()
+        trans_circ = trans_pcirc.assign(x).stim_circuit() #TODO:
         paulis_trans, signs = transform_paulis(trans_circ, paulis)
         coeffs_trans = np.multiply(signs, coeffs)
         # assume vqe_pcirc has stim circuit snapshot with all 0 parameters
@@ -362,7 +369,7 @@ def genetic_algorithm(
     def fitness_func(ga_instance, solutions, solutions_idc):
         return -loss_func_mp(
             solutions, 
-            paulis,
+            paulis, 
             coeffs,
             vqe_pcirc,
             trans_pcirc,

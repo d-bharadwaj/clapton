@@ -12,7 +12,7 @@ import numpy as np
 paulis = ["XXI", "IXX", "YYI", "IYY", "ZZI", "IZZ"]
 coeffs = np.random.random(len(paulis))
 
-from clapton.depolarization import GateGeneralDepolarizationModel #TODO: check this out 
+from clapton.depolarization import GateGeneralDepolarizationModel
 
 # let's add a noise model where we specify global 1q and 2q gate errors
 nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.02)

@@ -58,7 +58,7 @@ def twirled_circular_ansatz(N, reps=1, fix_2q=False):
                 pcirc.Q2(control, target).fix(1)
                 pcirc.PauliTwirl(target).fix(pauli_twirl_dict[after0])
                 pcirc.PauliTwirl(target).fix(pauli_twirl_dict[after1])
-            else:
+            else:   
                 pcirc.Q2(control, target)
     for i in range(N):
         pcirc.RY(i)
@@ -70,7 +70,10 @@ pauli_twirl_list = [twirled_circular_ansatz(N=len(paulis[0]), reps=1, fix_2q=Tru
 
 vqe_pcirc = circular_ansatz(N=len(paulis[0]), reps=2, fix_2q=True)
 vqe_pcirc.add_depolarization_model(nm)
-# vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list)
+vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list)
+print(f"BimBo of params : {vqe_pcirc.number_parametrized_gates()}")
+print(f"BimBo of params twirl : {vqe_pcirc.pauli_twirl_list[0].number_parametrized_gates()}")
+
 
 # we can perform nCAFQA by using the main optimization function "claptonize"
 # now with the noisy circuit

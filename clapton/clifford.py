@@ -269,20 +269,20 @@ class ParametrizedCliffordCircuit:
                 if p == "X":
                     circ.append("S", p_qb)
                     if self.depolarization_model is not None:
-                        gate = ParametrizedRZClifford(p_qb).assign(1)
+                        gate = ParametrizedRZClifford(p_qb).assign(1) #TODO: 
                         p = self.depolarization_model.get_gate_depolarization(gate)
                         if p is not None:
                             circ.append(f"DEPOLARIZE{len(gate.qbs)}", gate.qbs, p)
                     circ.append("SQRT_X", p_qb)
                     if self.depolarization_model is not None:
-                        gate = ParametrizedRXClifford(p_qb).assign(1)
+                        gate = ParametrizedRXClifford(p_qb).assign(1) #TODO: 
                         p = self.depolarization_model.get_gate_depolarization(gate)
                         if p is not None:
                             circ.append(f"DEPOLARIZE{len(gate.qbs)}", gate.qbs, p)
                 elif p == "Y":
                     circ.append("SQRT_X", p_qb)
                     if self.depolarization_model is not None:
-                        gate = ParametrizedRXClifford(p_qb).assign(1)
+                        gate = ParametrizedRXClifford(p_qb).assign(1) #TODO: 
                         p = self.depolarization_model.get_gate_depolarization(gate)
                         if p is not None:
                             circ.append(f"DEPOLARIZE{len(gate.qbs)}", gate.qbs, p)
