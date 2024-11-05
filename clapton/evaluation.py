@@ -55,7 +55,7 @@ def get_expectations(
             pauli_twirl_list = base_pcirc.pauli_twirl_list
             def _num_true(pauli):
                 res = []
-                for _ in range(0,100):  
+                for _ in range(len(pauli_twirl_list)):  
                     # Randomly select a circuit from the list 
                     twirled_pcirc = random.choice(pauli_twirl_list)
                     if twirled_pcirc.circ_snapshot is None:

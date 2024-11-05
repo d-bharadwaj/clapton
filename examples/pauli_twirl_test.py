@@ -7,12 +7,13 @@ sys.path.append(os.path.abspath(os.path.join(script_dir, "../")))
 from clapton.clapton import claptonize
 from clapton.ansatzes import *
 import numpy as np
+import stim 
 
 # define Hamiltonian, e.g. 3q Heisenberg model with random coefficients
 paulis = ["XXI", "IXX", "YYI", "IYY", "ZZI", "IZZ"]
 coeffs = np.random.random(len(paulis))
 
-from clapton.depolarization import GateGeneralDepolarizationModel #TODO: check this out 
+from clapton.depolarization import GateGeneralDepolarizationModel
 
 # let's add a noise model where we specify global 1q and 2q gate errors
 nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.02)
@@ -50,27 +51,52 @@ def twirled_circular_ansatz(N, reps=1, fix_2q=False):
             control = (i-1) % N
             target = i
             if fix_2q:
+                
                 (before0, before1), (after0, after1) = TWIRL_GATES_CX[
                     rng.integers(len(TWIRL_GATES_CX))]
 
                 pcirc.PauliTwirl(control).fix(pauli_twirl_dict[before0])
-                pcirc.PauliTwirl(control).fix(pauli_twirl_dict[before1])
+                pcirc.PauliTwirl(target).fix(pauli_twirl_dict[before1])
                 pcirc.Q2(control, target).fix(1)
-                pcirc.PauliTwirl(target).fix(pauli_twirl_dict[after0])
+                pcirc.PauliTwirl(control).fix(pauli_twirl_dict[after0])
                 pcirc.PauliTwirl(target).fix(pauli_twirl_dict[after1])
-            else:   
+            else:
                 pcirc.Q2(control, target)
     for i in range(N):
         pcirc.RY(i)
     for i in range(N):
         pcirc.RZ(i)
+    
     return pcirc
 
-pauli_twirl_list = [twirled_circular_ansatz(N=len(paulis[0]), reps=2, fix_2q=True) for _ in range(100)]
 
-vqe_pcirc = circular_ansatz(N=len(paulis[0]), reps=2, fix_2q=True)
-vqe_pcirc.add_depolarization_model(nm)
-vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list)
+def circuit_to_tableau(circuit: stim.Circuit) -> stim.Tableau:
+    s = stim.TableauSimulator()
+    s.do_circuit(circuit)
+    return s.current_inverse_tableau() ** -1
+
+# nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.02)
+nm = None
+
+pauli_twirl = True
+
+if pauli_twirl:
+    vqe_pcirc = twirled_circular_ansatz(N=len(paulis[0]), reps=1, fix_2q=True)
+    vqe_pcirc.add_depolarization_model(nm)
+
+    pauli_twirl_list = [twirled_circular_ansatz(N=len(paulis[0]), reps=1, fix_2q=True) for _ in range(100)]
+    pauli_twirl_list = [circuit.add_depolarization_model(nm) for circuit in pauli_twirl_list]
+
+    vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list)
+
+    for i, circuit in enumerate(pauli_twirl_list):
+        assert circuit_to_tableau(vqe_pcirc.stim_circuit()) == circuit_to_tableau(circuit.stim_circuit()), \
+            f"Circuit Mismatch at index {i}"
+
+else: 
+    vqe_pcirc = circular_ansatz(N=len(paulis[0]), reps=1, fix_2q=True)
+    vqe_pcirc.add_depolarization_model(nm)
+
 
 
 # we can perform nCAFQA by using the main optimization function "claptonize"
