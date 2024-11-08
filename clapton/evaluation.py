@@ -56,7 +56,7 @@ def get_expectations(
             def _num_true(pauli):
                 res = []
                 for _ in range(len(pauli_twirl_list)):  
-                    # Randomly select a circuit from the list 
+                    # Randomly select a circuit from the list of twirled circs
                     twirled_pcirc = random.choice(pauli_twirl_list)
                     if twirled_pcirc.circ_snapshot is None:
                         twirled_pcirc.snapshot()
@@ -70,20 +70,6 @@ def get_expectations(
                 return round(np.average(res))
             num_trues = np.fromiter((_num_true(pauli) for pauli in paulis), float, len(paulis))
             expectations = 1 - num_trues/shots * 2
-
-            # # use hidden routines for speedup (build main part of stim circ only once)
-            # if base_pcirc.circ_snapshot is None:
-            #     base_pcirc.snapshot()
-            # base_circ = base_pcirc.circ_snapshot
-            # def _num_true(pauli):   
-            #     circ = base_circ.copy()
-            #     base_pcirc._add_measurements(circ, pauli)
-            #     sampler = circ.compile_sampler()
-            #     results = sampler.sample(shots) 
-            #     return np.sum(results)
-            # num_trues = np.fromiter((_num_true(pauli) for pauli in paulis), float, len(paulis))
-            # expectations = 1 - num_trues/shots * 2
-
 
         else :
             # use hidden routines for speedup (build main part of stim circ only once)

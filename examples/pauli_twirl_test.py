@@ -1,25 +1,24 @@
 import sys
 import os
+import numpy as np
+import stim 
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 sys.path.append(os.path.abspath(os.path.join(script_dir, "../")))
 
 from clapton.clapton import claptonize
 from clapton.ansatzes import *
-import numpy as np
-import stim 
+from clapton.depolarization import GateGeneralDepolarizationModel
 
-# define Hamiltonian, e.g. 3q Heisenberg model with random coefficients
+# Define Hamiltonian, e.g. 3q Heisenberg model with random coefficients
 paulis = ["XXI", "IXX", "YYI", "IYY", "ZZI", "IZZ"]
 coeffs = np.random.random(len(paulis))
 
-from clapton.depolarization import GateGeneralDepolarizationModel
+def add_pauli_twirl(circuit):
+    rng = np.random.default_rng()
 
-# let's add a noise model where we specify global 1q and 2q gate errors
-nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.02)
-rng = np.random.default_rng()
-
-TWIRL_GATES_CX = (
+    TWIRL_GATES_CX = [
         (('I', 'I'), ('I', 'I')),
         (('I', 'X'), ('I', 'X')),
         (('I', 'Y'), ('Z', 'Y')),
@@ -36,39 +35,28 @@ TWIRL_GATES_CX = (
         (('Z', 'X'), ('Z', 'X')),
         (('Z', 'Y'), ('I', 'Y')),
         (('Z', 'Z'), ('I', 'Z')),
-    )
+    ]
 
-pauli_twirl_dict = {"I":0,"X":1,"Y":2,"Z":3}
+    pauli_twirl_dict = {"I": 0, "X": 1, "Y": 2, "Z": 3}
 
-def twirled_circular_ansatz(N, reps=1, fix_2q=False):
-    pcirc = ParametrizedCliffordCircuit()
-    for _ in range(reps):
-        for i in range(N):
-            pcirc.RY(i)
-        for i in range(N):
-            pcirc.RZ(i)
-        for i in range(N):
-            control = (i-1) % N
-            target = i
-            if fix_2q:
-                
-                (before0, before1), (after0, after1) = TWIRL_GATES_CX[
-                    rng.integers(len(TWIRL_GATES_CX))]
+    new_circuit = ParametrizedCliffordCircuit()
+    for gate in circuit.gates:
+        if gate.label == '2Q':
+            control, target = gate.qbs
 
-                pcirc.PauliTwirl(control).fix(pauli_twirl_dict[before0])
-                pcirc.PauliTwirl(target).fix(pauli_twirl_dict[before1])
-                pcirc.Q2(control, target).fix(1)
-                pcirc.PauliTwirl(control).fix(pauli_twirl_dict[after0])
-                pcirc.PauliTwirl(target).fix(pauli_twirl_dict[after1])
-            else:
-                pcirc.Q2(control, target)
-    for i in range(N):
-        pcirc.RY(i)
-    for i in range(N):
-        pcirc.RZ(i)
-    
-    return pcirc
+            (before0, before1), (after0, after1) = TWIRL_GATES_CX[
+                rng.integers(len(TWIRL_GATES_CX))]
 
+            new_circuit.PauliTwirl(control).fix(pauli_twirl_dict[before0])
+            new_circuit.PauliTwirl(target).fix(pauli_twirl_dict[before1])
+            new_circuit.Q2(control, target).fix(1)
+            new_circuit.PauliTwirl(control).fix(pauli_twirl_dict[after0])
+            new_circuit.PauliTwirl(target).fix(pauli_twirl_dict[after1])
+        elif gate.label == "RY":
+            new_circuit.RY(gate.qbs[0])
+        elif gate.label == "RZ":
+            new_circuit.RY(gate.qbs[0])
+    return new_circuit
 
 def circuit_to_tableau(circuit: stim.Circuit) -> stim.Tableau:
     s = stim.TableauSimulator()
@@ -77,41 +65,41 @@ def circuit_to_tableau(circuit: stim.Circuit) -> stim.Tableau:
 
 # nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.02)
 nm = None
-
 pauli_twirl = True
 
+assert not pauli_twirl or nm is not None, "Depolarization model must be defined if Pauli Twirling is applied"
+
 if pauli_twirl:
-    vqe_pcirc = twirled_circular_ansatz(N=len(paulis[0]), reps=1, fix_2q=True)
-    vqe_pcirc.add_depolarization_model(nm)
-
-    pauli_twirl_list = [twirled_circular_ansatz(N=len(paulis[0]), reps=1, fix_2q=True) for _ in range(100)]
-    pauli_twirl_list = [circuit.add_depolarization_model(nm) for circuit in pauli_twirl_list]
-
+    init_ansatz = circular_ansatz_mirrored(N=len(paulis[0]), reps=1, fix_2q=True)
+    vqe_pcirc = add_pauli_twirl(init_ansatz)
+    pauli_twirl_list = [add_pauli_twirl(init_ansatz) for _ in range(100)]
     vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list)
 
     for i, circuit in enumerate(pauli_twirl_list):
         assert circuit_to_tableau(vqe_pcirc.stim_circuit()) == circuit_to_tableau(circuit.stim_circuit()), \
             f"Circuit Mismatch at index {i}"
 
-else: 
-    vqe_pcirc = circular_ansatz(N=len(paulis[0]), reps=1, fix_2q=True)
+    vqe_pcirc.add_depolarization_model(nm)
+    pauli_twirl_list = [circuit.add_depolarization_model(nm) for circuit in pauli_twirl_list]
+else:
+    vqe_pcirc = circular_ansatz_mirrored(N=len(paulis[0]), reps=1, fix_2q=True)
     vqe_pcirc.add_depolarization_model(nm)
 
-
-
-# we can perform nCAFQA by using the main optimization function "claptonize"
-# now with the noisy circuit
-# this is slower, as the noisy circuit needs to be sampled 
+# Perform nCAFQA using the main optimization function "claptonize" with the noisy circuit
 ks_best, energy_noisy, energy_noiseless = claptonize(
     paulis,
     coeffs,
     vqe_pcirc,
-    n_proc=4,           # total number of processes in parallel
-    n_starts=4,         # number of random genetic algorithm starts in parallel
-    n_rounds=1,         # number of budget rounds, if None it will terminate itself
-    callback=print,     # callback for internal parameter (#iteration, energies, ks) processing
-    budget=20,          # budget per genetic algorithm instance
+    n_proc=4,           # Total number of processes in parallel
+    n_starts=4,         # Number of random genetic algorithm starts in parallel
+    n_rounds=1,         # Number of budget rounds, if None it will terminate itself
+    callback=print,     # Callback for internal parameter (#iteration, energies, ks) processing
+    budget=20,          # Budget per genetic algorithm instance
 )
 
-# differrence
-print(f"Difference between Noisy and Noiseless calculation : {np.abs(energy_noisy-energy_noiseless)}")
+# Print the energies
+print(f"Energy Noisy: {energy_noisy}")
+print(f"Energy Noiseless: {energy_noiseless}")
+
+# Difference
+print(f"Difference between Noisy and Noiseless calculation: {np.abs(energy_noisy - energy_noiseless)}")
