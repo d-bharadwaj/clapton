@@ -66,7 +66,7 @@ def get_expectations(
                     sampler = circ.compile_sampler()
                     results = sampler.sample(shots)
                     summed = np.sum(results)
-                    res.append(summed)
+                    res.append(summed) #TODO: Maybe we should do a different way?
                 return round(np.average(res))
             num_trues = np.fromiter((_num_true(pauli) for pauli in paulis), float, len(paulis))
             expectations = 1 - num_trues/shots * 2
@@ -87,7 +87,6 @@ def get_expectations(
     else:
         expectations = get_expectations_tableau(base_pcirc, paulis)
     return expectations
-
 
 def get_energy(
         pcirc: ParametrizedCliffordCircuit, 

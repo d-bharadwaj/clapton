@@ -136,7 +136,7 @@ class ParametrizedPauliClifford(Parametrized1QClifford):
     Pauli Twirl Clifford gate. dim = 24.
     """
     def __init__(self, qb: int):
-        super().__init__("C1", qb, 24)
+        super().__init__("PT_Gate", qb, 24)
     def get_stim_id(self):
         return Pauli_Twirls[self.k]
 
@@ -468,6 +468,29 @@ class ParametrizedCliffordCircuit:
         """
         self.pauli_twirl_list = pauli_twirl_list
         return self
+    def add_coherent_noise(self, noise_level=0.1):
+        new_circuit = ParametrizedCliffordCircuit()
+        for gate in self.gates:
+            if gate.label == '2Q':
+                control, target = gate.qbs
+                new_circuit.Q2(control, target).fix(1)
+
+                num_gates = int(noise_level * 10)  # Adjust the multiplier as needed
+                for _ in range(num_gates):
+                    new_circuit.C1(control).fix(8)  # Add Clifford S gate
+                    new_circuit.C1(target).fix(8)  # Add Clifford S gate
+            elif gate.label == "PT_GATE":
+                index, = gate.qbs
+                gate_id=gate.k
+                new_circuit.PauliTwirl(index).fix(gate_id)
+            elif gate.label == "RY":
+                new_circuit.RY(gate.qbs[0])
+            elif gate.label == "RZ":
+                new_circuit.RY(gate.qbs[0])
+            elif gate.label == "RX":
+                new_circuit.RY(gate.qbs[0])
+        return new_circuit
+
     def add_pauli_twirl(self):
         rng = np.random.default_rng()
         TWIRL_GATES_CX = [
@@ -507,6 +530,8 @@ class ParametrizedCliffordCircuit:
             elif gate.label == "RY":
                 new_circuit.RY(gate.qbs[0])
             elif gate.label == "RZ":
+                new_circuit.RY(gate.qbs[0])
+            elif gate.label == "RX":
                 new_circuit.RY(gate.qbs[0])
         return new_circuit
     def number_parametrized_gates(self):

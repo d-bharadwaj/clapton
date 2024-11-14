@@ -11,6 +11,8 @@ from clapton.clapton import claptonize
 from clapton.ansatzes import *
 from clapton.depolarization import GateGeneralDepolarizationModel
 
+np.random.seed(0)
+
 # Define Hamiltonian, e.g. 3q Heisenberg model with random coefficients
 paulis = ["XXI", "IXX", "YYI", "IYY", "ZZI", "IZZ"]
 coeffs = np.random.random(len(paulis))
@@ -20,8 +22,8 @@ def circuit_to_tableau(circuit: stim.Circuit) -> stim.Tableau:
     s.do_circuit(circuit)
     return s.current_inverse_tableau() ** -1
 
-nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.02)
-# nm = None
+# nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.02)
+nm = None
 pauli_twirl = True
 
 assert not pauli_twirl or nm is not None, "Depolarization model must be defined if Pauli Twirling is applied"

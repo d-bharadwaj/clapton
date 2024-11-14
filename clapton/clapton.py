@@ -392,7 +392,8 @@ def genetic_algorithm(
                     crossover_probability=crossover_probability,
                     mutation_probability=mutation_probability,
                     keep_elitism=keep_elitism,
-                    fitness_batch_size=population_size
+                    fitness_batch_size=population_size,
+                    random_seed=0,
                     )
     if initial_population is not None:
         initial_population = np.asarray(initial_population)
