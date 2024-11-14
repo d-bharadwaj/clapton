@@ -1,4 +1,5 @@
 import stim
+import numpy as np
 from copy import deepcopy
 from clapton.gate_ids import C1ids, RXids, RYids, RZids, Q2ids, Pauli_Twirls
 from clapton.depolarization import DepolarizationModel
@@ -170,8 +171,7 @@ class ParametrizedCliffordCircuit:
     
     def PauliTwirl(self, qb: int):
         """Add pauli twirl from gate set."""
-        return self._append_gate(ParametrizedAny1QClifford, qb)
-    
+        return self._append_gate(ParametrizedPauliClifford, qb)
     def RX(self, qb: int):
         """Add RX gate."""
         return self._append_gate(ParametrizedRXClifford, qb)
@@ -269,20 +269,20 @@ class ParametrizedCliffordCircuit:
                 if p == "X":
                     circ.append("S", p_qb)
                     if self.depolarization_model is not None:
-                        gate = ParametrizedRZClifford(p_qb).assign(1) #TODO: 
+                        gate = ParametrizedRZClifford(p_qb).assign(1) 
                         p = self.depolarization_model.get_gate_depolarization(gate)
                         if p is not None:
                             circ.append(f"DEPOLARIZE{len(gate.qbs)}", gate.qbs, p)
                     circ.append("SQRT_X", p_qb)
                     if self.depolarization_model is not None:
-                        gate = ParametrizedRXClifford(p_qb).assign(1) #TODO: 
+                        gate = ParametrizedRXClifford(p_qb).assign(1) 
                         p = self.depolarization_model.get_gate_depolarization(gate)
                         if p is not None:
                             circ.append(f"DEPOLARIZE{len(gate.qbs)}", gate.qbs, p)
                 elif p == "Y":
                     circ.append("SQRT_X", p_qb)
                     if self.depolarization_model is not None:
-                        gate = ParametrizedRXClifford(p_qb).assign(1) #TODO: 
+                        gate = ParametrizedRXClifford(p_qb).assign(1)
                         p = self.depolarization_model.get_gate_depolarization(gate)
                         if p is not None:
                             circ.append(f"DEPOLARIZE{len(gate.qbs)}", gate.qbs, p)
@@ -468,6 +468,47 @@ class ParametrizedCliffordCircuit:
         """
         self.pauli_twirl_list = pauli_twirl_list
         return self
+    def add_pauli_twirl(self):
+        rng = np.random.default_rng()
+        TWIRL_GATES_CX = [
+            (('I', 'I'), ('I', 'I')),
+            (('I', 'X'), ('I', 'X')),
+            (('I', 'Y'), ('Z', 'Y')),
+            (('I', 'Z'), ('Z', 'Z')),
+            (('X', 'I'), ('X', 'X')),
+            (('X', 'X'), ('X', 'I')),
+            (('X', 'Y'), ('Y', 'Z')),
+            (('X', 'Z'), ('Y', 'Y')),
+            (('Y', 'I'), ('Y', 'X')),
+            (('Y', 'X'), ('Y', 'I')),
+            (('Y', 'Y'), ('X', 'Z')),
+            (('Y', 'Z'), ('X', 'Y')),
+            (('Z', 'I'), ('Z', 'I')),
+            (('Z', 'X'), ('Z', 'X')),
+            (('Z', 'Y'), ('I', 'Y')),
+            (('Z', 'Z'), ('I', 'Z')),
+        ]
+
+        pauli_twirl_dict = {"I": 0, "X": 1, "Y": 2, "Z": 3}
+
+        new_circuit = ParametrizedCliffordCircuit()
+        for gate in self.gates:
+            if gate.label == '2Q':
+                control, target = gate.qbs
+
+                (before0, before1), (after0, after1) = TWIRL_GATES_CX[
+                    rng.integers(len(TWIRL_GATES_CX))]
+
+                new_circuit.PauliTwirl(control).fix(pauli_twirl_dict[before0])
+                new_circuit.PauliTwirl(target).fix(pauli_twirl_dict[before1])
+                new_circuit.Q2(control, target).fix(1)
+                new_circuit.PauliTwirl(control).fix(pauli_twirl_dict[after0])
+                new_circuit.PauliTwirl(target).fix(pauli_twirl_dict[after1])
+            elif gate.label == "RY":
+                new_circuit.RY(gate.qbs[0])
+            elif gate.label == "RZ":
+                new_circuit.RY(gate.qbs[0])
+        return new_circuit
     def number_parametrized_gates(self):
         return sum([1 for gate in self.gates if not gate.is_fixed()])
     def parameter_dimensions(self):

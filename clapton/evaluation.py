@@ -62,7 +62,7 @@ def get_expectations(
                         twirled_pcirc.snapshot()
                     twirled_circ = twirled_pcirc.circ_snapshot
                     circ = twirled_circ.copy()
-                    twirled_pcirc._add_measurements(circ, pauli) #TODO: what is this actually doing?
+                    twirled_pcirc._add_measurements(circ, pauli)
                     sampler = circ.compile_sampler()
                     results = sampler.sample(shots)
                     summed = np.sum(results)
@@ -75,10 +75,10 @@ def get_expectations(
             # use hidden routines for speedup (build main part of stim circ only once)
             if base_pcirc.circ_snapshot is None:
                 base_pcirc.snapshot()
-            base_circ = base_pcirc.circ_snapshot
+            base_circ = base_pcirc.circ_snapshot #this is stim circ
             def _num_true(pauli):   
                 circ = base_circ.copy()
-                base_pcirc._add_measurements(circ, pauli)
+                base_pcirc._add_measurements(circ, pauli) #this takes stim circuit and adds pauli meas. in the end, but uses noise model in the base circ
                 sampler = circ.compile_sampler()
                 results = sampler.sample(shots)
                 return np.sum(results)

@@ -15,66 +15,25 @@ from clapton.depolarization import GateGeneralDepolarizationModel
 paulis = ["XXI", "IXX", "YYI", "IYY", "ZZI", "IZZ"]
 coeffs = np.random.random(len(paulis))
 
-def add_pauli_twirl(circuit):
-    rng = np.random.default_rng()
-
-    TWIRL_GATES_CX = [
-        (('I', 'I'), ('I', 'I')),
-        (('I', 'X'), ('I', 'X')),
-        (('I', 'Y'), ('Z', 'Y')),
-        (('I', 'Z'), ('Z', 'Z')),
-        (('X', 'I'), ('X', 'X')),
-        (('X', 'X'), ('X', 'I')),
-        (('X', 'Y'), ('Y', 'Z')),
-        (('X', 'Z'), ('Y', 'Y')),
-        (('Y', 'I'), ('Y', 'X')),
-        (('Y', 'X'), ('Y', 'I')),
-        (('Y', 'Y'), ('X', 'Z')),
-        (('Y', 'Z'), ('X', 'Y')),
-        (('Z', 'I'), ('Z', 'I')),
-        (('Z', 'X'), ('Z', 'X')),
-        (('Z', 'Y'), ('I', 'Y')),
-        (('Z', 'Z'), ('I', 'Z')),
-    ]
-
-    pauli_twirl_dict = {"I": 0, "X": 1, "Y": 2, "Z": 3}
-
-    new_circuit = ParametrizedCliffordCircuit()
-    for gate in circuit.gates:
-        if gate.label == '2Q':
-            control, target = gate.qbs
-
-            (before0, before1), (after0, after1) = TWIRL_GATES_CX[
-                rng.integers(len(TWIRL_GATES_CX))]
-
-            new_circuit.PauliTwirl(control).fix(pauli_twirl_dict[before0])
-            new_circuit.PauliTwirl(target).fix(pauli_twirl_dict[before1])
-            new_circuit.Q2(control, target).fix(1)
-            new_circuit.PauliTwirl(control).fix(pauli_twirl_dict[after0])
-            new_circuit.PauliTwirl(target).fix(pauli_twirl_dict[after1])
-        elif gate.label == "RY":
-            new_circuit.RY(gate.qbs[0])
-        elif gate.label == "RZ":
-            new_circuit.RY(gate.qbs[0])
-    return new_circuit
-
 def circuit_to_tableau(circuit: stim.Circuit) -> stim.Tableau:
     s = stim.TableauSimulator()
     s.do_circuit(circuit)
     return s.current_inverse_tableau() ** -1
 
-# nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.02)
-nm = None
+nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.02)
+# nm = None
 pauli_twirl = True
 
 assert not pauli_twirl or nm is not None, "Depolarization model must be defined if Pauli Twirling is applied"
 
 if pauli_twirl:
     init_ansatz = circular_ansatz_mirrored(N=len(paulis[0]), reps=1, fix_2q=True)
-    vqe_pcirc = add_pauli_twirl(init_ansatz)
-    pauli_twirl_list = [add_pauli_twirl(init_ansatz) for _ in range(100)]
+    #Pauli Twirl the circuit
+    vqe_pcirc = init_ansatz.add_pauli_twirl()
+    pauli_twirl_list = [init_ansatz.add_pauli_twirl() for _ in range(100)]
     vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list)
 
+    #Ensure Twirled Circuits are logically equal to Original Ansatz
     for i, circuit in enumerate(pauli_twirl_list):
         assert circuit_to_tableau(vqe_pcirc.stim_circuit()) == circuit_to_tableau(circuit.stim_circuit()), \
             f"Circuit Mismatch at index {i}"
