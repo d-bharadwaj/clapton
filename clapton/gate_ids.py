@@ -18,5 +18,3 @@ RZids = ["I", "S", "Z", "S_DAG"]
 
 # don't perform 2Q gate if None
 Q2ids = [None, "CX", "CX", "SWAP"]
-
-
