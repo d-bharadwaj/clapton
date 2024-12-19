@@ -12,7 +12,7 @@ C1ids = [
 Pauli_Twirls = ["I", "X", "Y", "Z",]
 
 # Clifford rotations
-RXids = ["I", "SQRT_X", "X", "SQRT_X_DAG"]
+RXids = ["I", "SQRT_X", "X", "SQRT_X_DAG"] # 0,pi/2,pi,3pi/2
 RYids = ["I", "SQRT_Y", "Y", "SQRT_Y_DAG"]
 RZids = ["I", "S", "Z", "S_DAG"]
 

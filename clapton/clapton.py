@@ -44,7 +44,7 @@ def loss_func(
         pauli_weight_loss = 0.
         loss = energy + energy_noiseless
     else:
-        trans_circ = trans_pcirc.assign(x).stim_circuit() #TODO:
+        trans_circ = trans_pcirc.assign(x).stim_circuit()
         paulis_trans, signs = transform_paulis(trans_circ, paulis)
         coeffs_trans = np.multiply(signs, coeffs)
         # assume vqe_pcirc has stim circuit snapshot with all 0 parameters

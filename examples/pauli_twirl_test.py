@@ -1,7 +1,7 @@
 import sys
 import os
 import numpy as np
-import stim 
+import stim
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
@@ -22,8 +22,8 @@ def circuit_to_tableau(circuit: stim.Circuit) -> stim.Tableau:
     s.do_circuit(circuit)
     return s.current_inverse_tableau() ** -1
 
-# nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.02)
-nm = None
+nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.05)
+# nm = None
 pauli_twirl = True
 
 assert not pauli_twirl or nm is not None, "Depolarization model must be defined if Pauli Twirling is applied"
