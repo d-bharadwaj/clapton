@@ -17,8 +17,6 @@ def transform_paulis(
         paulis_trans = [str(t)[1:] for t in trans]
     return paulis_trans, signs
 
-
-
 ### VQE
 def get_expectations_tableau(
         base_pcirc: ParametrizedCliffordCircuit, 
@@ -66,7 +64,7 @@ def get_expectations(
                     sampler = circ.compile_sampler()
                     results = sampler.sample(shots)
                     summed = np.sum(results)
-                    res.append(summed) #TODO: Maybe we should do a different way?
+                    res.append(summed)
                 return round(np.average(res))
             num_trues = np.fromiter((_num_true(pauli) for pauli in paulis), float, len(paulis))
             expectations = 1 - num_trues/shots * 2

@@ -23,8 +23,11 @@ def loss_func(
         if vqe_pcirc.pauli_twirl_list is not None:
             for circuit in vqe_pcirc.pauli_twirl_list:
                 circuit.assign(x)
-        else:
-            vqe_pcirc.assign(x) 
+        # else:
+        #     vqe_pcirc.assign(x) 
+
+        vqe_pcirc.assign(x) 
+
 
         # vqe_pcirc.snapshot()
         # vqe_pcirc.snapshot_noiseless()
