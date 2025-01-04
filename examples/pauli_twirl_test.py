@@ -31,9 +31,7 @@ assert not pauli_twirl or nm is not None, "Depolarization model must be defined 
 if pauli_twirl:
     init_ansatz = circular_ansatz_mirrored(N=len(paulis[0]), reps=1, fix_2q=True)
     #Pauli Twirl the circuit
-    # vqe_pcirc = init_ansatz.add_pauli_twirl()
     vqe_pcirc = init_ansatz
-    
     pauli_twirl_list = [vqe_pcirc.add_pauli_twirl() for _ in range(100)] #need to change to 100 
     vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list)
 
