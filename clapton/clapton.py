@@ -43,7 +43,8 @@ def loss_func(
                             )
         pauli_weight_loss = 0.
         loss = energy + energy_noiseless
-    else:
+    
+    else: #NOTE: Currently, PT does not account for this case.
         trans_circ = trans_pcirc.assign(x).stim_circuit()
         paulis_trans, signs = transform_paulis(trans_circ, paulis)
         coeffs_trans = np.multiply(signs, coeffs)

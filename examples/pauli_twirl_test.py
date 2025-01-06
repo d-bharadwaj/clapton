@@ -24,7 +24,7 @@ def circuit_to_tableau(circuit: stim.Circuit) -> stim.Tableau:
 
 nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.05)
 # nm = None
-pauli_twirl = True
+pauli_twirl = False
 
 assert not pauli_twirl or nm is not None, "Depolarization model must be defined if Pauli Twirling is applied"
 
@@ -32,8 +32,8 @@ if pauli_twirl:
     init_ansatz = circular_ansatz_mirrored(N=len(paulis[0]), reps=1, fix_2q=True)
     #Pauli Twirl the circuit
     vqe_pcirc = init_ansatz
-    pauli_twirl_list = [vqe_pcirc.add_pauli_twirl() for _ in range(100)] #need to change to 100 
-    vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list)
+    pauli_twirl_list = [vqe_pcirc.add_pauli_twirl() for _ in range(100)]
+    # vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list) 
 
     #Ensure Twirled Circuits are logically equal to Original Ansatz
     for i, circuit in enumerate(pauli_twirl_list):
@@ -42,6 +42,8 @@ if pauli_twirl:
 
     vqe_pcirc.add_depolarization_model(nm)
     pauli_twirl_list = [circuit.add_depolarization_model(nm) for circuit in pauli_twirl_list]
+    vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list) #NOTE: Made major change here by adding list after adding noise
+
 else:
     vqe_pcirc = circular_ansatz_mirrored(N=len(paulis[0]), reps=1, fix_2q=True)
     vqe_pcirc.add_depolarization_model(nm)

@@ -527,13 +527,15 @@ class ParametrizedCliffordCircuit:
                 new_circuit.Q2(control, target).fix(1)
                 new_circuit.PauliTwirl(control).fix(pauli_twirl_dict[after0])
                 new_circuit.PauliTwirl(target).fix(pauli_twirl_dict[after1])
+
             elif gate.label == "RY":
                 new_circuit.RY(gate.qbs[0])
             elif gate.label == "RZ":
-                new_circuit.RY(gate.qbs[0])
+                new_circuit.RZ(gate.qbs[0])
             elif gate.label == "RX":
-                new_circuit.RY(gate.qbs[0])
+                new_circuit.RX(gate.qbs[0])
         return new_circuit
+    
     def number_parametrized_gates(self):
         return sum([1 for gate in self.gates if not gate.is_fixed()])
     def parameter_dimensions(self):
