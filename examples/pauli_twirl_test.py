@@ -10,12 +10,18 @@ sys.path.append(os.path.abspath(os.path.join(script_dir, "../")))
 from clapton.clapton import claptonize
 from clapton.ansatzes import *
 from clapton.depolarization import GateGeneralDepolarizationModel
+from clapton.hamiltonians import ising_model
 
 np.random.seed(0)
 
 # Define Hamiltonian, e.g. 3q Heisenberg model with random coefficients
-paulis = ["XXI", "IXX", "YYI", "IYY", "ZZI", "IZZ"]
-coeffs = np.random.random(len(paulis))
+# paulis = ["XXI", "IXX", "YYI", "IYY", "ZZI", "IZZ"]
+# coeffs = np.random.random(len(paulis))
+
+# Multi Qubit Hamiltonian
+
+num_qubits = 10
+coeffs,paulis,_ = ising_model(N=num_qubits,Jx=0.2,Jy=0.3,h=0.4)
 
 def circuit_to_tableau(circuit: stim.Circuit) -> stim.Tableau:
     s = stim.TableauSimulator()
@@ -24,12 +30,12 @@ def circuit_to_tableau(circuit: stim.Circuit) -> stim.Tableau:
 
 nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.05)
 # nm = None
-pauli_twirl = False
+pauli_twirl = True
 
 assert not pauli_twirl or nm is not None, "Depolarization model must be defined if Pauli Twirling is applied"
 
 if pauli_twirl:
-    init_ansatz = circular_ansatz_mirrored(N=len(paulis[0]), reps=1, fix_2q=True)
+    init_ansatz = circular_ansatz_mirrored(N=num_qubits, reps=1, fix_2q=True)
     #Pauli Twirl the circuit
     vqe_pcirc = init_ansatz
     pauli_twirl_list = [vqe_pcirc.add_pauli_twirl() for _ in range(100)]
@@ -45,7 +51,7 @@ if pauli_twirl:
     vqe_pcirc.add_pauli_twirl_list(pauli_twirl_list) #NOTE: Made major change here by adding list after adding noise
 
 else:
-    vqe_pcirc = circular_ansatz_mirrored(N=len(paulis[0]), reps=1, fix_2q=True)
+    vqe_pcirc = circular_ansatz_mirrored(N=num_qubits, reps=1, fix_2q=True)
     vqe_pcirc.add_depolarization_model(nm)
 
 # Perform nCAFQA using the main optimization function "claptonize" with the noisy circuit
