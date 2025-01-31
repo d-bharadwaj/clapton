@@ -4,7 +4,6 @@ from copy import deepcopy
 from clapton.gate_ids import C1ids, RXids, RYids, RZids, Q2ids, Pauli_Twirls
 from clapton.depolarization import DepolarizationModel
 
-
 class ParametrizedClifford:
     """
     Superclass.
@@ -468,6 +467,7 @@ class ParametrizedCliffordCircuit:
         """
         self.pauli_twirl_list = pauli_twirl_list
         return self
+    
     def add_coherent_noise(self, noise_level=0.1):
         new_circuit = ParametrizedCliffordCircuit()
         for gate in self.gates:

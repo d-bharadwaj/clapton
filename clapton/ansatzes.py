@@ -22,7 +22,6 @@ def linear_ansatz(N, reps=1, fix_2q=False):
         pcirc.RZ(i)
     return pcirc
 
-
 def circular_ansatz(N, reps=1, fix_2q=False):
     pcirc = ParametrizedCliffordCircuit()
     for _ in range(reps):
