@@ -1,3 +1,5 @@
+# Script used to file issue on qiskit github.
+
 import qiskit
 import numpy as np
 from qiskit_ibm_runtime import EstimatorV2 as Estimator

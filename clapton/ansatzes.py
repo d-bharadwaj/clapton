@@ -1,5 +1,5 @@
 from clapton.clifford import ParametrizedCliffordCircuit
-
+from qiskit.circuit import QuantumCircuit,ParameterVector
 
 ### Ansatzes
 def linear_ansatz(N, reps=1, fix_2q=False):
@@ -143,3 +143,25 @@ def ansatz_from_instructions(
         pcirc.define_measurement_map(meas_map_dict)
         return pcirc
     return ansatz
+
+# For Pauli Twirling in VQE
+def qiskit_circular_ansatz(N, reps=1): 
+    qc = QuantumCircuit(N)
+
+    # define your parameters
+    p = ParameterVector('p', (N*2) *(reps+1)) 
+
+    for r in range(reps): 
+        for i in range(N):
+            qc.ry(p[2*N*r+i], i)  
+        for i in range(N):
+            qc.rz(p[2*N*r+(i+N)], i)
+        for i in range(N):
+            control = (i-1) % N
+            target = i
+            qc.cx(control, target)
+    for i in range(N):
+        qc.ry(p[2*N*reps+i], i)
+    for i in range(N):
+        qc.rz(p[2*N*reps + (i+N)], i)
+    return qc
