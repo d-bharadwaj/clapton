@@ -95,7 +95,7 @@ print(f"Difference between Noisy and Noiseless calculation: {np.abs(energy_noisy
 qc = qiskit_circular_ansatz(num_qubits,reps)
 
 #Initializing params from CAFQA 
-initial_params = ks_best
+initial_params = [ (param * np.pi/2) for param in ks_best]
 
 # Defining Hamiltoninan for VQE
 weights  =  coeffs
@@ -183,7 +183,7 @@ print(f"Optimal parameters: {pt_optimal_params}")
 # Normal Method
 non_pt_cafqa = False
 ks_best, energy_noisy, energy_noiseless = initialize_circuit_and_claptonize(non_pt_cafqa, num_qubits, reps, nm, paulis, coeffs)
-initial_params = ks_best
+initial_params = [ (param * np.pi/2) for param in ks_best]
 
 iteration_number= 0
 
