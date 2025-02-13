@@ -95,7 +95,7 @@ def initialize_circuit_and_claptonize(pauli_twirl: bool, num_qubits: int, reps: 
         n_starts=4,         # Number of random genetic algorithm starts in parallel
         n_rounds=1,         # Number of budget rounds, if None it will terminate itself
         callback=print,     # Callback for internal parameter (#iteration, energies, ks) processing
-        budget=20,          # Budget per genetic algorithm instance
+        budget=500,          # Budget per genetic algorithm instance
     )
 
     #Initializing params from CAFQA 
