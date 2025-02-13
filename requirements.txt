@@ -120,13 +120,10 @@ pyzmq==26.2.0
 qcs-api-client-common==0.10.0
 qcs-sdk-python==0.20.1
 qiskit==1.1.1
-qiskit-addon-obp==0.1.0
-qiskit-addon-utils==0.1.0
 qiskit-aer-gpu-cu11==0.15.1
 qiskit-algorithms==0.3.1
 qiskit-ibm-provider==0.11.0
 qiskit-ibm-runtime==0.32.0
-qiskit_qec==0.0.1
 qiskit-research==0.0.4
 quil==0.13.2
 requests==2.32.3
@@ -161,7 +158,6 @@ urllib3==2.2.3
 vcdvcd==2.3.6
 verb==0.1.0
 vunit_hdl==4.7.0
-vvdb==0.0.1
 wasmtime==25.0.0
 wcwidth==0.2.13
 websocket-client==1.8.0

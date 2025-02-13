@@ -17,11 +17,11 @@ from qiskit_aer import AerSimulator
 from qiskit_aer.noise import NoiseModel, QuantumError, coherent_unitary_error
 from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
 from qiskit_algorithms import NumPyMinimumEigensolver
+from qiskit.converters import circuit_to_dag, dag_to_circuit
 
 import numpy as np
 from typing import Iterable, Optional
 from scipy.optimize import minimize
-
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
@@ -35,14 +35,31 @@ from clapton.PT_PM import PauliTwirl
 
 np.random.seed(0)
 
+
+
 num_qubits = 10
 reps = 1 
 coeffs,paulis,_ = ising_model(N=num_qubits,Jx=0.2,Jy=0.3,h=0.4)
+qc = qiskit_circular_ansatz(num_qubits,reps)
+
+
+def qiskit_params_map(circ):
+    dag = circuit_to_dag(circ)
+    param_list = [list(node.op.params[0].parameters)[0].name for node in dag.op_nodes() if node.op.params and isinstance(node.op.params[0], ParameterExpression)]
+    return {k: v for v, k in enumerate(param_list)}
 
 def circuit_to_tableau(circuit: stim.Circuit) -> stim.Tableau:
     s = stim.TableauSimulator()
     s.do_circuit(circuit)
     return s.current_inverse_tableau() ** -1
+
+qiskit_param_map = qiskit_params_map(qc)
+
+# Ensure the sorted names are correct
+ordered_params = [param.name for param in qc.parameters]
+assert sorted(qiskit_param_map.keys()) == ordered_params
+
+param_map = {qiskit_param_map[param]: i for i, param in enumerate(ordered_params)}
 
 nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.05)
 pauli_twirl = True
@@ -67,6 +84,8 @@ def initialize_circuit_and_claptonize(pauli_twirl: bool, num_qubits: int, reps: 
         vqe_pcirc = circular_ansatz(N=num_qubits, reps=1, fix_2q=True)
         vqe_pcirc.add_depolarization_model(nm)
 
+    vqe_pcirc.define_parameter_map(param_map)
+
     # Perform nCAFQA using the main optimization function "claptonize" with the noisy circuit
     ks_best, energy_noisy, energy_noiseless = claptonize(
         paulis,
@@ -78,7 +97,11 @@ def initialize_circuit_and_claptonize(pauli_twirl: bool, num_qubits: int, reps: 
         callback=print,     # Callback for internal parameter (#iteration, energies, ks) processing
         budget=20,          # Budget per genetic algorithm instance
     )
-    return ks_best, energy_noisy, energy_noiseless
+
+    #Initializing params from CAFQA 
+    initial_params = [ (param * np.pi/2) for param in vqe_pcirc.internal_read()]
+
+    return initial_params, energy_noisy, energy_noiseless
 
 pt_cafqa = True
 ks_best, energy_noisy, energy_noiseless = initialize_circuit_and_claptonize(pt_cafqa, num_qubits, reps, nm, paulis, coeffs)
@@ -91,11 +114,9 @@ print(f"Energy Noiseless: {energy_noiseless}")
 print(f"Difference between Noisy and Noiseless calculation: {np.abs(energy_noisy - energy_noiseless)}")
 
 # VQE 
-
-qc = qiskit_circular_ansatz(num_qubits,reps)
-
 #Initializing params from CAFQA 
-initial_params = [ (param * np.pi/2) for param in ks_best]
+
+initial_params = ks_best
 
 # Defining Hamiltoninan for VQE
 weights  =  coeffs
