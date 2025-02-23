@@ -1,12 +1,19 @@
-# This script compares the results between using 'nCAFQA+VQE' vs 'nCAFQA(w Pauli Twirling)+VQE(w Pauli Twirling)'.
+# This script compares the results between using 'nCAFQA+VQE' vs 'nCAFQA(w Pauli Twirling)+VQE(w Pauli Twirling)'. 
+# This is used as the main script for getting sanity check results
 
 import sys
 import os
 import numpy as np
 import stim
+from typing import Iterable, Optional
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+
 
 from qiskit.dagcircuit import DAGCircuit
-from qiskit.circuit import QuantumCircuit, QuantumRegister, Gate,ParameterVector
+from qiskit.circuit import QuantumCircuit, QuantumRegister, Gate,ParameterVector, ParameterExpression
 from qiskit.circuit.library import CXGate, ECRGate
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.basepasses import TransformationPass
@@ -19,9 +26,6 @@ from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
 from qiskit_algorithms import NumPyMinimumEigensolver
 from qiskit.converters import circuit_to_dag, dag_to_circuit
 
-import numpy as np
-from typing import Iterable, Optional
-from scipy.optimize import minimize
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
@@ -35,13 +39,10 @@ from clapton.PT_PM import PauliTwirl
 
 np.random.seed(0)
 
-
-
 num_qubits = 10
 reps = 1 
 coeffs,paulis,_ = ising_model(N=num_qubits,Jx=0.2,Jy=0.3,h=0.4)
 qc = qiskit_circular_ansatz(num_qubits,reps)
-
 
 def qiskit_params_map(circ):
     dag = circuit_to_dag(circ)
@@ -57,11 +58,11 @@ qiskit_param_map = qiskit_params_map(qc)
 
 # Ensure the sorted names are correct
 ordered_params = [param.name for param in qc.parameters]
-assert sorted(qiskit_param_map.keys()) == ordered_params
+assert list(qiskit_param_map.keys()) == ordered_params
 
 param_map = {qiskit_param_map[param]: i for i, param in enumerate(ordered_params)}
 
-nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.05)
+nm = GateGeneralDepolarizationModel(p1=0.005, p2=0.05) #These probably don't match to the backend.
 pauli_twirl = True
 
 def initialize_circuit_and_claptonize(pauli_twirl: bool, num_qubits: int, reps: int, nm, paulis, coeffs):
@@ -116,7 +117,7 @@ print(f"Difference between Noisy and Noiseless calculation: {np.abs(energy_noisy
 # VQE 
 #Initializing params from CAFQA 
 
-initial_params = ks_best
+initial_params = [(param * np.pi/2) for param in ks_best]
 
 # Defining Hamiltoninan for VQE
 weights  =  coeffs
@@ -141,19 +142,16 @@ backend = FakeMumbaiV2() # Your quantum backend
 
 # Only Coherent Noise Model 
 noise_model = NoiseModel()
-
-# Define the over-rotation angle (in radians)
+## Define the over-rotation angle (in radians)
 theta = 0.1  # Adjust this value to control the amount of over-rotation
-
-# Create the over-rotated CX gate
+## Create the over-rotated CX gate
 cx_overrotated = Operator([
     [np.cos(theta/2), -1j*np.sin(theta/2), 0, 0],
     [-1j*np.sin(theta/2), np.cos(theta/2), 0, 0],
     [0, 0, np.cos(theta/2), -1j*np.sin(theta/2)],
     [0, 0, -1j*np.sin(theta/2), np.cos(theta/2)]
 ])
-
-# Create a quantum error from the over-rotated CX gate
+## Create a quantum error from the over-rotated CX gate
 noise_model.add_all_qubit_quantum_error(coherent_unitary_error(cx_overrotated), ['cx'])
 
 pt_vqe_energies=[]
@@ -167,7 +165,7 @@ def pt_vqe_cost_function(params, ansatz, hamiltonian, pass_manager, estimator,tw
         transpiled_circuit = transpiled_circuit.assign_parameters(params)
         job = estimator.run([(transpiled_circuit, hamiltonian)]) #Something wrong w parameter optim.
         result = job.result()
-        energy = result[0].data.evs #NOTE: Is this actually expectation value?
+        energy = result[0].data.evs
         energy_values = np.append(energy_values, energy)
     
     iteration_number += 1
@@ -183,7 +181,7 @@ estimator = Estimator(
         noise_model=noise_model,
         coupling_map=backend.coupling_map,
         basis_gates=noise_model.basis_gates,
-        device = 'GPU'
+        # device = 'GPU'
     )
 )
 result = minimize(
@@ -239,8 +237,6 @@ optimal_value = result.fun
 print(f"Optimal value without PT : {optimal_value}")
 print(f"Optimal parameters: {optimal_params}")
 
-import matplotlib.pyplot as plt
-
 plt.plot(vqe_energies, label='VQE Energy')
 plt.plot(pt_vqe_energies, label='Twirled CAFQA + PT_VQE Energy')
 plt.axhline(y=ref_value, color='r', linestyle='--', label=f'Ground State Energy: {ref_value:.5f}')
@@ -248,7 +244,6 @@ plt.xlabel('Iteration')
 plt.ylabel('VQE Energy')
 plt.title(f'VQE Energy vs Iteration ; {num_qubits} qubits')
 plt.legend()
-plt.show()
 
 # Save the plot
-plt.savefig('plots/test.png')
+plt.savefig('plots/NERSC_test.png')
